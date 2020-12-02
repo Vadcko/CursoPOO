@@ -1,0 +1,202 @@
+using System;
+using System.Collections.Generic;
+
+
+
+namespace GoF
+{
+    class Celula
+    {
+        public int x, y;
+        public string forma;
+        public bool esta_viva;
+        public bool estado_siguiente;
+
+        public Celula(int x, int y, string forma, bool esta_viva)
+        {
+            this.x = x; this.y = y; this.forma = forma;
+            this.esta_viva = esta_viva;
+        }
+        public void dibuja()
+        {
+            Console.SetCursorPosition(x, y);
+
+            if (esta_viva)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("[┬]");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.Write(" ¤ ");
+            }
+        }
+    }
+
+    class Tablero
+    {
+        public int renglones, columnas;
+        public Random gen_random;
+
+        public List<List<Celula>> tablero = new List<List<Celula>>();
+
+        public Tablero(int r, int c)
+        {
+            gen_random = new Random();
+            this.renglones = r; this.columnas = c;
+
+            for (int i = 0; i < r; i++)
+            {
+                List<Celula> renglon = new List<Celula>();
+
+                for (int j = 0; j < c; j++)
+                {
+
+                    int aleatorio = gen_random.Next(0, 10);
+                    if (aleatorio > 8)
+                        renglon.Add(new Celula(10 + 3 * j, i, "┌■┐", true));
+                    else
+                        renglon.Add(new Celula(10 + 3 * j, i, "┌■┐", false));
+                }
+                tablero.Add(renglon);
+            }
+        }
+        public int getVivas(int r, int c)
+        {
+            int total = 0;
+
+            if (r > 0 && c > 0)
+                if (tablero[r - 1][c - 1].esta_viva)
+                    total++;
+
+            if (c > 0)
+                if (tablero[r][c - 1].esta_viva)
+                    total++;
+
+            if (c > 0 && r < renglones - 1)
+                if (tablero[r + 1][c - 1].esta_viva)
+                    total++;
+
+            if (r > 0)
+                if (tablero[r - 1][c].esta_viva)
+                    total++;
+
+            if (r < renglones - 1)
+                if (tablero[r + 1][c].esta_viva)
+                    total++;
+
+            if (r > 0 && c < columnas - 1)
+                if (tablero[r - 1][c + 1].esta_viva)
+                    total++;
+
+            if (c < columnas - 1)
+                if (tablero[r][c + 1].esta_viva)
+                    total++;
+
+            if (r < renglones - 1 && c < columnas - 1)
+                if (tablero[r + 1][c + 1].esta_viva)
+                    total++;
+
+            return total;
+
+        }
+        public void setViva(int r, int c)
+        {
+            if (r >= 0 && r < renglones && c >= 0 && c < columnas)
+            {
+                tablero[r][c].esta_viva = true;
+            }
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.Clear(); // Actualiza la pantalla
+            Console.CursorVisible = false;
+            Console.SetWindowSize(86, 28);
+            Console.SetBufferSize(86, 28);
+
+            Tablero GoF = new Tablero(15, 15);
+
+            GoF.setViva(10, 10);
+            GoF.setViva(9, 10);
+            GoF.setViva(8, 9);
+            GoF.setViva(9, 10);
+            GoF.setViva(9, 11);
+            GoF.setViva(8, 10);
+
+            foreach (List<Celula> renglon in GoF.tablero)
+                foreach (Celula c in renglon)
+                {
+                    c.dibuja();
+                }
+
+            Console.ReadKey();
+
+            int contador = 0;
+            ConsoleKeyInfo ckInfo;
+
+            do
+            {
+                contador++;
+                Console.WriteLine();
+
+                for (int i = 0; i < GoF.renglones; i++) 
+                    for (int j = 0; j < GoF.columnas; j++) 
+                    {
+
+                        if (GoF.tablero[i][j].esta_viva)
+                        {
+                            int total_vecinas = GoF.getVivas(i, j);
+
+                            if (total_vecinas == 2 || total_vecinas == 3)
+                                GoF.tablero[i][j].estado_siguiente = true;
+                            else
+                                GoF.tablero[i][j].estado_siguiente = false;
+                        }
+                    }
+                for (int i = 0; i < GoF.renglones; i++)
+                    for (int j = 0; j < GoF.columnas; j++) 
+                    {
+                        if (GoF.tablero[i][j].esta_viva == false)
+                        {
+                            int total_vecinas = GoF.getVivas(i, j);
+
+                            if (total_vecinas == 3)
+                                GoF.tablero[i][j].estado_siguiente = true;
+                        }
+                    }
+                for (int i = 0; i < GoF.renglones; i++)  
+                    for (int j = 0; j < GoF.columnas; j++) 
+                    {
+                        GoF.tablero[i][j].esta_viva = GoF.tablero[i][j].estado_siguiente;
+                    }
+
+                foreach (List<Celula> renglon in GoF.tablero)
+                    foreach (Celula c in renglon)
+                    {
+                        c.dibuja();
+                    }
+                int num_habitantes = 0;
+                for (int i = 0; i < GoF.renglones; i++)
+                    for (int j = 0; j < GoF.columnas; j++)
+                    {
+                        if (GoF.tablero[i][j].esta_viva)
+                        {
+                            num_habitantes++;
+                        }
+                    }
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("           Habitantes:{0}                  Generación:{1}", num_habitantes, contador);
+                Console.WriteLine("           Conway                   'Juego de la vida'");
+
+                ckInfo = Console.ReadKey();
+
+            } while (ckInfo.Key != ConsoleKey.Delete);
+        }
+    }
+}
